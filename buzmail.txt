@@ -1,0 +1,136 @@
+BUZMAIL
+=======
+
+An user-friendly 'overlay' to MSMAPI controls.
+
+Devised and written by Mark "Buzby" Beeton
+
+WORDWRAP this file in NOTEPAD for best use.
+
+
+About
+-----
+It all started when I wanted to use the MSMAPI controls in a project. After many failed attempts I found the interface to these two controls to be a complete pain and vowed to make them user-friendly for all users. So I set about writing this module. By providing a mail object and various functions you will find BUZMAIL much easier to use than trying to talk to the MSMAPI controls directly.
+Please feel free to use these functions in any program you like - a mention on the about screen or a nice e-mail to BuzbyB@Hotmail.com would be good (just so I know how it's going)
+Cheers
+
+How To Use
+----------
+Add the module BUZMAIL.BAS and the form BUZMAIL.FRM to your VB project - the BUZMAIL.FRM form contains the two MSMAPI controls and should really be left alone - this form is used internally by the BUZMAIL functions.
+You will now be provided with a Mail 'object' which you can use to send and receive e-mails. See below for more detials on each function.
+
+Note: Keep your eye on the DEBUG (Immediate) window in VB - this contains many messages from the BUZMAIL 'engine' and will help you debug any problems you have.
+
+The Mail Object
+---------------
+Not strictly an object, more a type - but it works in a similar way;
+
+Creating an object:
+Dim MyMsg as Mail
+
+'Properties':
+Mail.ID = the uniquer mail identifier for the current message
+Mail.RecipCount = the number of recipients of the current message
+Mail.Recips(x).Address = the address of recipient x
+Mail.Recips(x).Name = the display name of recipient x
+Mail.Recips(x).Type = the type of recipient = 0-To, 1-CC, 2-BCC
+Mail.AttachCount = the number of attached files
+Mail.Attach(x).Name = the display name of the attached file
+Mail.Attach(x).Filename = the filename of the attached file
+Mail.Subject = the message subject
+Mail.Text = the message text
+Mail.From.Address = the address of the sender of the message
+Mail.From.Name = the display name of the sender
+Mail.DataReceived = when the msg was received
+Mail.Unread = whether the e-mail is unread
+
+Regrettably the RecipCount and AttachCount are 1-based, not 0-based as is the norm for VB (I'm sorry - I did this a while ago!)
+eg; For Recips=1 to RecipCount instead of For Recips = 0 to RecipCount-1
+
+The object can be manipulated directly in code or you can use the many functions included (see below) to manipulate the object (recommended)
+
+eg;
+MyMsg.Subject = "Mail Subject"
+
+Functions
+---------
+Sub MailAddAttach (ThisMail as Mail, DispName as String, Filename As String)
+- Attaches a file to the mail object ThisMail.
+eg; MailAddAttach MyMsg, "Word Doc", "C:\MYDOCUMENT.DOC"
+
+Sub MailAddRecip (ThisMail as Mail, DispName as String, Address As String, ReciptType As Integer)
+- Adds a recipient to the mail object ThisMail. RecipType is 0=TO, 1=CC, 2=BCC
+eg; MailAddRecipt MyMsg, "Mark Beeton", "Buzbyb@Hotmail.com"
+Note that recipients are checked at this stage - they are only checked when the mail is sent - see below.
+
+Sub MailAddress (ThisMail as Mail)
+- Displays the Windows address book, already displaying any recipients already added to the mail object ThisMail, allows user to add, remove recipients etc using the standard form. Normally used on an "Address Book" button
+eg; MailAddress MyMsg
+
+Sub MailConfig
+- Displays the control panel applet for MS Mail.
+
+Sub MailContents (ThisMail as Mail, Subject As String, Message as String)
+- Adds the subject and text to the mail object ThisMail.
+eg; MailContents MyMsg, "The subject", "Hi how are you"
+Note - equivalent to doing MyMsg.Subject=",...." and MyMsg.Text = "......"
+
+Function MailCount (UnreadOnly As Boolean) As Long
+- Returns the number of mail messages in Inbox - set UnReadOnly to TRUE to retrieve just unread message count.
+eg; NumOfMsgs = MailCount(TRUE) - retrieves number of unread messages.
+
+Function MailDelete (MailNum As Long) As Boolean
+- Removes message number MailNum from the mailbox. Returns FALSE if it fails.
+eg; MailDeleted = MailDelete(10)
+Note - easier to use MailDeleteID (see below)
+
+Function MailDeleteID (MailID as String) As Boolean
+- Removes message with the ID of MailID from the mailbox. Returns FALSE if it fails.
+eg; MailDeleted = MailDelete("[mailId]")
+
+Function MailDetach (ThisMsg as Mail, FileNum As Long) As String
+- Returns the filename of attached file number FileNum, you can then use the SAVEAS common dialog box to ask the user where to copy the file to.
+eg; AttachFileName = MailDetach (MyMsg, 1)
+
+Function MailGet (MsgNum As Long) As Mail
+- Returns the Mail object for Mail number MsgNum from the mailbox. You can retreive the number of mail messages in the mailbox by using the MailCount function.
+eg; Dim MyMsg As Mail
+MyMsg = MailGet(1)
+
+Function MailGetID (MailID AS String) AS Mail
+- As above, but retrieves the mail messages with the appropriate unique id.
+eg; Dim MyMsg as Mail
+MyMsg = MailGetID("[mail id]")
+
+Function MailLogoff As Boolean
+- Logs the current user off the mail session - you should use this before your program closes. Returns FALSE if it fails.
+eg; Success = MailLogoff
+
+Function MailLogon (UserName As String, Password As String) As Boolean
+- Logs the user onto the mail session - you must use this before attempting to read / send any mail messages etc. Returns FALSE if it fails
+eg; Success = MailLogon ("Mark Beeton","")
+Note: Use the Mail Profile Name as the Username.
+
+Sub MailRemoveAttach (ThisMail As Mail, AttachNum As Integer)
+- Removes attachment number AttachNum from the mail message. NOTE: This is NOT the same as detaching it...
+eg; MailRemoveAttach MyMsg, 1
+
+Sub MailRemoveRecip (ThisMail As Mail, RecipNum As Integer)
+- Removes recipient number RecipNum from the mail message.
+eg; MailRemoveRecip MyMsg,1
+
+Function MailReply (ThisMsg As Mail) As Boolean
+- use on a message sent to you to put the 'from name' into the recipient list. (eg, set it up to reply to sender) Returns FALSE if it fails
+eg; Success = MailReply(MyMsg)
+
+Function MailSend (ThisMail As Mail) AS Integer
+- The function that sends a mail message. This function attempts to resolve (check) all the recipients - if it can't find a particular recipient you are prompted for any close matches. It then adds any attachments to the message, and sends the e-mail.
+Returns 0=ok, -1=no recips, -2=not logged on, >0= can't resolve recip x
+eg; ReturnInt = MailSend(MyMsg)
+
+
+Real-World Examples
+-------------------
+To see a 'real world' example of the system working please view the project BUZMAIL.VBP included with this file.
+
+Please feel free to e-mail me on BuzbyB@Hotmail.com if you have any questions about these functions.
